@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import NamedTuple, Optional
 from enum import Enum
 
@@ -91,5 +90,3 @@ class GameState(NamedTuple):
     ball:              Pos
     current_player:    Player
     en_passant_target: Optional[Pos]
-
-
