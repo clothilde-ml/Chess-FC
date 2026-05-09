@@ -1,0 +1,184 @@
+@startuml chess_fc
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Courier
+skinparam classFontStyle bold
+skinparam linetype ortho
+
+' ============================================================
+' ENUMERATIONS
+' ============================================================
+
+enum PieceKind {
+    PAWN   = "P"
+    ROOK   = "R"
+    BISHOP = "B"
+    KNIGHT = "N"
+    QUEEN  = "Q"
+}
+
+enum Player {
+    WHITE = 1
+    BLACK = 2
+    --
+    + opponent() : Player
+}
+
+enum MoveKind {
+    NORMAL
+    CAPTURE
+    BALL_PASS
+    EN_PASSANT
+    PROMOTION
+}
+
+' ============================================================
+' PIECE  (singleton par combinaison kind × player)
+' ============================================================
+
+class Piece {
+    + kind   : PieceKind
+    + player : Player
+    {static} - _cache : dict[tuple, Piece]
+    --
+    {static} + __new__(kind, player) : Piece
+    + __repr__() : str
+    + __eq__(other) : bool
+}
+
+note left of Piece
+  12 instances max en mémoire.
+  -> Les __pions__ peuvent devenir __reine__ !
+end note
+
+' ============================================================
+' POS
+' ============================================================
+
+enum Pos {
+    tuple[int, int]
+}
+
+' ============================================================
+' MOVE
+' ============================================================
+
+class Move {
+    + src          : Pos
+    + dst          : Pos
+    + kind         : MoveKind
+    + promotion_to : PieceKind [0..1]
+    --
+    + __eq__(other) : bool
+    + __lt__(other) : bool
+}
+
+note top of Move
+  __lt__ permet d'insérer
+  Move dans un heapq.
+end note
+
+' ============================================================
+' BOARD  (immuable)
+' ============================================================
+
+class Board {
+    - _grid : tuple[tuple[Piece|None, ...], ...]
+    --
+    + get(pos : Pos) : Piece | None
+    + set(pos : Pos, piece : Piece | None) : Board
+    + move_piece(src : Pos, dst : Pos) : Board
+    + pieces(player : Player | None) : Generator[Pos, Piece]
+    + __repr__() : str
+    + __eq__(other : Board) : bool
+    {static} + initial() : Board
+}
+
+note right of Board
+  Toute modification retourne
+  un nouveau Board (immuable).
+  initial() construit la
+  position de départ Chess FC.
+end note
+
+' ============================================================
+' GAME STATE  (immuable, hashable → clé de cache)
+' ============================================================
+
+class GameState {
+    + board             : Board
+    + ball              : Pos
+    + current_player    : Player
+    + en_passant_target : Pos [0..1]
+    --
+    + replace(...) : GameState
+    + __repr__()   : str
+    + __eq__(other : GameState) : bool
+    {static} + initial() : GameState
+}
+
+note bottom of GameState
+  Immuable (clé de cache dict)
+  replace() crée un nouvel état
+  eq() utilise Board.eq() et Piece.eq()
+  repr() utilise Board.repr() et Piece.repr()
+  Le nombre de GameState est fini
+end note
+
+
+' ============================================================
+' ALGORITHMES (interfaces)
+' ============================================================
+
+abstract class Agent {
+    + player : Player
+    --
+    + {abstract} choose_move(state : GameState) : Move
+}
+
+class MinMaxAgent {
+    + player    : Player
+    + max_depth : int
+    - _cache    : dict[int, tuple[float, Move]]
+    --
+    + choose_move(state : GameState) : Move
+    - _minmax(state, depth, alpha, beta, maximizing) : float
+}
+
+class RandomAgent {
+    + player : Player
+    --
+    + choose_move(state : GameState) : Move
+}
+
+' ============================================================
+' RELATIONS
+' ============================================================
+
+' Piece
+Piece .> PieceKind  : kind
+Piece ..> Player    : player
+
+' Move
+Move ..> Pos      : src, dst
+Move ..> MoveKind : kind
+PieceKind <.. Move  : promotion_to
+
+' Board
+Board "1" *-- "0..12" Piece : contient
+Board --> Pos : cases
+
+' GameState
+GameState "1" *-- "1" Board  : board
+GameState "1" ..> "1" Player : current_player
+GameState "1" ..> "1" Pos    : ball
+
+' Agents
+Player <.. Agent : player
+Agent -> Move      : produit
+Agent <|-- MinMaxAgent
+Agent <|-- RandomAgent
+Agent --> GameState : lit
+
+@enduml
