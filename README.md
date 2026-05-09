@@ -62,7 +62,7 @@ Le joueur artificiel utilise **Min-Max avec élagage α-β**, fidèle au pseudo-
 
 > Le diagramme ci-dessous représente la conception initiale du projet. L'implémentation finale s'en écarte volontairement : les classes ont été remplacées par des `NamedTuple` et des fonctions libres, dans le style fonctionnel du cours.
 
-![Diagramme UML](data_struct.png)
+![Diagramme UML](data_struct_uml.png)
 
 
 ---
