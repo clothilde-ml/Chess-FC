@@ -78,6 +78,7 @@ def grid_set(grid: Grid, pos: Pos, piece: Optional[Piece]) -> Grid:
     return tuple(tuple(r) for r in rows)
 
 def empty_grid() -> Grid:
+    """Retourne une grille vide"""
     return tuple(
         tuple(None for _ in range(BOARD_COLS))
         for _ in range(BOARD_ROWS)
