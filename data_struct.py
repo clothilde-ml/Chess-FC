@@ -14,9 +14,9 @@ def opponent(player: Player) -> Player:
 
 class PieceKind(Enum):
     PAWN   = "P"    # pion
-    ROOK   = "R"    # tour
-    BISHOP = "B"    # fou
-    KNIGHT = "N"    # cavalier
+    ROOK   = "T"    # tour
+    BISHOP = "F"    # fou
+    KNIGHT = "C"    # cavalier
     QUEEN  = "Q"    # reine (après promotion)
 
 # ======================== Types de coup ========================
@@ -83,6 +83,17 @@ def empty_grid() -> Grid:
         tuple(None for _ in range(BOARD_COLS))
         for _ in range(BOARD_ROWS)
     )
+    
+# ======================== Faciliter la lecture du code ========================
+
+def move_piece(grid: Grid, src : Pos, dst: Pos) -> Grid:
+    return grid_set(grid_set(grid, src, None), dst, grid_get(grid, src))
+
+def move_and_promote_piece(grid: Grid, src : Pos, dst: Pos, promotion: Piece) -> Grid:
+    return grid_set(grid_set(grid, src, None), dst, promotion)
+
+def piece_prise(grid, pos: Pos) -> Grid:
+    return grid_set(grid, pos, None)
     
 # ======================== Etat du jeu (hashable) ========================
     
