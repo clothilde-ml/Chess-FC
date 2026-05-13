@@ -106,6 +106,51 @@ def _sliding_moves(grid: Grid, ball: Pos, src: Pos, dirs: list[Pos], player: Pla
                     break  # bloqué par sa propre pièce 
     return moves
 
+def _pawn_moves(grid: Grid, ball: Pos, en_passant_target: Optional[Pos], src: Pos, player: Player) -> list[Move]:
+    """Coups d'un pion (avance, double pas, prises, en passant, promotion, tir)."""
+    moves: list[Move] = []
+    row, col = src
+    fwd = PAWN_FORWARD[player] # +1 (blanc) | -1 (noir)
+    on_ball = src == ball
+    goal_cols =  WHITE_GOAL_COLS if player == Player.WHITE else BLACK_GOAL_COLS
+
+    if on_ball:
+        # Tir de balle : avance droite + 2 diagonales
+        for d_row in [0, 1, -1]:
+            dst = (row + d_row, col + fwd)
+            if is_valid_pos(dst):
+                moves.append(Move(src, dst, MoveKind.BALL_PASS))
+        return moves
+
+    # (sinon) Avance simple
+    dst1 = (row, col + fwd)
+    if is_valid_pos(dst1) and grid_get(grid, dst1) is None and dst1 != ball:
+        if col + fwd in goal_cols:
+            moves.append(Move(src, dst1, MoveKind.PROMOTION, PieceKind.QUEEN))
+        else:
+            moves.append(Move(src, dst1, MoveKind.NORMAL))
+        # Double pas depuis la colonne de départ
+        if col == PAWN_START_COL[player]:
+            dst2 = (row, col + 2 * fwd)
+            if is_valid_pos(dst2) and grid_get(grid, dst2) is None and dst2 != ball:
+                moves.append(Move(src, dst2, MoveKind.NORMAL))
+
+    # Prises diagonales et prise en passant
+    for d_row in [1, -1]:
+        dst_diag = (row + d_row, col + fwd)
+        if not is_valid_pos(dst_diag):
+            continue
+        occupant = grid_get(grid, dst_diag)
+        if occupant is not None and occupant.player != player:
+            if col + fwd in goal_cols:
+                moves.append(Move(src, dst_diag, MoveKind.PROMOTION, PieceKind.QUEEN))
+            else:
+                moves.append(Move(src, dst_diag, MoveKind.CAPTURE))
+        elif dst_diag == en_passant_target:
+            moves.append(Move(src, dst_diag, MoveKind.EN_PASSANT))
+
+    return moves
+
 def apply_move(state: GameState, move: Move) -> GameState:
     """Applique un coup et retourne le nouvel état immuable."""
     grid = state.grid
