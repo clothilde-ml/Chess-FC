@@ -4,6 +4,7 @@ from data_struct import Grid, Pos, Move, MoveKind
 from data_struct import GameState, Player, opponent, Piece, PieceKind, Pos
 from data_struct import empty_grid, grid_set, is_valid_pos, grid_get
 from data_struct import move_piece, move_and_promote_piece, piece_prise
+from data_struct import BOARD_ROWS, BOARD_COLS
     
 # ======================== Etat initial ========================
 
@@ -126,7 +127,7 @@ def _pawn_moves(grid: Grid, ball: Pos, en_passant_target: Optional[Pos], src: Po
     dst1 = (row, col + fwd)
     if is_valid_pos(dst1) and grid_get(grid, dst1) is None and dst1 != ball:
         if col + fwd in goal_cols:
-            moves.append(Move(src, dst1, MoveKind.PROMOTION, PieceKind.QUEEN))
+            moves.append(Move(src, dst1, MoveKind.PROMOTION))
         else:
             moves.append(Move(src, dst1, MoveKind.NORMAL))
         # Double pas depuis la colonne de départ
@@ -143,12 +144,37 @@ def _pawn_moves(grid: Grid, ball: Pos, en_passant_target: Optional[Pos], src: Po
         occupant = grid_get(grid, dst_diag)
         if occupant is not None and occupant.player != player:
             if col + fwd in goal_cols:
-                moves.append(Move(src, dst_diag, MoveKind.PROMOTION, PieceKind.QUEEN))
+                moves.append(Move(src, dst_diag, MoveKind.PROMOTION))
             else:
                 moves.append(Move(src, dst_diag, MoveKind.CAPTURE))
         elif dst_diag == en_passant_target:
             moves.append(Move(src, dst_diag, MoveKind.EN_PASSANT))
 
+    return moves
+
+def legals(state: GameState) -> list[Move]:
+    """Tous les coups légaux du joueur courant."""
+    moves: list[Move] = []
+    player = state.current_player
+    for row in range(BOARD_ROWS):
+        for col in range(BOARD_COLS):
+            pos = (row, col)
+            if not is_valid_pos(pos):
+                continue
+            piece = grid_get(state.grid, pos)
+            if piece is None or piece.player != player:
+                continue
+            match piece.kind:
+                case PieceKind.PAWN:
+                    moves.extend(_pawn_moves(state.grid, state.ball, state.en_passant_target, pos, player))
+                case PieceKind.ROOK:
+                    moves.extend(_sliding_moves(state.grid, state.ball, pos, ROOK_DIRS, player))
+                case PieceKind.BISHOP:
+                    moves.extend(_sliding_moves(state.grid, state.ball, pos, BISHOP_DIRS, player))
+                case PieceKind.QUEEN:
+                    moves.extend(_sliding_moves(state.grid, state.ball, pos, QUEEN_DIRS, player))
+                case PieceKind.KNIGHT:
+                    moves.extend(_knight_moves(state.grid, state.ball, pos, player))
     return moves
 
 def apply_move(state: GameState, move: Move) -> GameState:
@@ -189,3 +215,27 @@ def apply_move(state: GameState, move: Move) -> GameState:
         current_player=opponent(player),
         en_passant_target=new_ep,
     )
+
+# ======================== Etat final ========================
+
+def is_goal(ball: Pos, player: Player) -> bool:
+    """True si la balle est dans le but marqué par player."""
+    _, col = ball
+    if player == Player.WHITE:
+        return col in WHITE_GOAL_COLS
+    return col in BLACK_GOAL_COLS
+
+def is_final(state: GameState) -> bool:
+    return (
+        is_goal(state.ball, Player.WHITE)
+        or is_goal(state.ball, Player.BLACK)
+        or len(legals(state)) == 0
+    )
+
+def score(state: GameState) -> float:
+    """+1 si WHITE a marqué, -1 si BLACK a marqué, 0 si match nul."""
+    if is_goal(state.ball, Player.WHITE):
+        return 1.0
+    if is_goal(state.ball, Player.BLACK):
+        return -1.0
+    return 0.0

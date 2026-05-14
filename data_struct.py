@@ -3,6 +3,7 @@ from enum import Enum
 
 # ======================== Joueurs ========================
 
+# on choisit 1 et 2 (plus facile à comparer que "W" et "B") ?
 class Player(Enum):
     WHITE = 1
     BLACK = 2
@@ -37,10 +38,9 @@ class Piece(NamedTuple):
     player: Player
 
 class Move(NamedTuple):
-    src:          Pos
-    dst:          Pos
-    kind:         MoveKind
-    promotion_to: Optional[PieceKind] = None
+    src:  Pos
+    dst:  Pos
+    kind: MoveKind
 
 
 # ======================== Plateau ========================

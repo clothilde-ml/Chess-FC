@@ -68,7 +68,6 @@ class Move {
     + src          : Pos
     + dst          : Pos
     + kind         : MoveKind
-    + promotion_to : PieceKind [0..1]
     --
     + __eq__(other) : bool
     + __lt__(other) : bool
@@ -163,8 +162,6 @@ Piece ..> Player    : player
 ' Move
 Move ..> Pos      : src, dst
 Move ..> MoveKind : kind
-PieceKind <.. Move  : promotion_to
-
 ' Board
 Board "1" *-- "0..12" Piece : contient
 Board --> Pos : cases

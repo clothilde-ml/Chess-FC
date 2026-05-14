@@ -1,7 +1,8 @@
 from data_struct import GameState, Piece, PieceKind, Player, grid_get, is_valid_pos, piece_prise
-from game_rules import ROOK_DIRS, BISHOP_DIRS, KNIGHT_JUMPS
-from game_rules import initial_state, _sliding_moves, _knight_moves, _pawn_moves, apply_move
-from interface import pprint
+from game_rules import ROOK_DIRS, BISHOP_DIRS
+from game_rules import initial_state, _sliding_moves, _knight_moves, _pawn_moves, legals
+from game_rules import apply_move, is_goal, is_final, score, opponent
+from interface import pprint, move_to_str
 
 def main() -> None:
     state = initial_state()
@@ -21,12 +22,18 @@ def main() -> None:
     knight_moves = _knight_moves(state.grid, state.ball, (3,0), state.current_player) 
     print(SEP, f"Mouvements du cavalier blanc ({len(knight_moves)}) :", SEP, "\n")
     for m in knight_moves :
+        piece = grid_get(state.grid, m.src)
+        assert piece != None
+        print(" ", move_to_str(m, piece))
         new_state = apply_move(state, m)
         pprint(new_state)
     
     pawn_moves = _pawn_moves(state.grid, state.ball, None, (3,1), state.current_player) 
     print(SEP, f"Mouvements du pion blanc B4 ({len(pawn_moves)}) :", SEP, "\n")
     for m in pawn_moves :
+        piece = grid_get(state.grid, m.src)
+        assert piece != None
+        print(" ", move_to_str(m, piece))
         new_state = apply_move(state, m)
         pprint(new_state)
         
@@ -39,6 +46,9 @@ def main() -> None:
     rook_moves = _sliding_moves(state_rook.grid, state_rook.ball, (2,0), ROOK_DIRS, state_rook.current_player) 
     print(SEP, f"Mouvements de la tour blanche ({len(rook_moves)}) :", SEP, "\n")
     for m in rook_moves :
+        piece = grid_get(state.grid, m.src)
+        assert piece != None
+        print(" ", move_to_str(m, piece))
         new_state = apply_move(state_rook, m)
         pprint(new_state)
     
@@ -51,8 +61,28 @@ def main() -> None:
     bishop_moves = _sliding_moves(state_bishop.grid, state_bishop.ball, (4,0), BISHOP_DIRS, state_bishop.current_player) 
     print(SEP, f"Mouvements du fou blanc ({len(bishop_moves)}) :", SEP, "\n")
     for m in bishop_moves :
+        piece = grid_get(state.grid, m.src)
+        assert piece != None
+        print(" ", move_to_str(m, piece))
         new_state = apply_move(state_bishop, m)
         pprint(new_state)
+        
+    SEP2 = "=" * 60
+    print(SEP2)
+    print(" "*20, "ALL LEGAL MOVES")
+    print(SEP2)
+    
+    moves = legals(state)
+    print(f"Coups légaux WHITE au départ : {len(moves)}")
+    for m in sorted(moves):
+        piece = grid_get(state.grid, m.src)
+        assert piece != None
+        print(" ", move_to_str(m, piece))
+    
+    assert not is_final(state)
+    assert score(state) == 0
+    assert not is_goal(state.ball, state.current_player)
+    assert not is_goal(state.ball, opponent(state.current_player))
     
 if __name__ == "__main__":
     main()
