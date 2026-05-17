@@ -1,8 +1,42 @@
+import time
+
 from data_struct import GameState, Piece, PieceKind, Player, grid_get, is_valid_pos, piece_prise
 from game_rules import ROOK_DIRS, BISHOP_DIRS
 from game_rules import initial_state, _sliding_moves, _knight_moves, _pawn_moves, legals
 from game_rules import apply_move, is_goal, is_final, score, opponent
 from interface import pprint, move_to_str
+from strategies import (
+    Strategy,
+    strategy_random, strategy_first_legal,
+    strategy_minmax, strategy_minmax_random,
+    strategy_alphabeta,
+)
+
+def play_game(strategy_white: Strategy, strategy_black: Strategy, debug: bool = False) -> float:
+    """Boucle de jeu : alterne WHITE/BLACK jusqu'à état final, retourne le score."""
+    state = initial_state()
+    strategies = {Player.WHITE: strategy_white, Player.BLACK: strategy_black}
+    i = 0
+    while not is_final(state):
+        if debug:
+            pprint(state)
+        move = strategies[state.current_player](state)
+        if debug:
+            piece = grid_get(state.grid, move.src)
+            if piece is not None:
+                print(" ->", move_to_str(move, piece))
+        state = apply_move(state, move)
+        time.sleep(0.2)
+        i += 1
+        if i % 10 == 0:
+            if not debug:
+                pprint(state)
+            input(f"--- Tour {i} ---")
+    if debug:
+        pprint(state)
+        print("Score final :", score(state))
+    return score(state)
+
 
 def main() -> None:
     state = initial_state()
@@ -83,6 +117,24 @@ def main() -> None:
     assert score(state) == 0
     assert not is_goal(state.ball, state.current_player)
     assert not is_goal(state.ball, opponent(state.current_player))
+
+    print(SEP2)
+    print(" " * 18, "TEST DES STRATÉGIES")
+    print(SEP2)
     
+    print("\n--- alphabeta (WHITE) vs random (BLACK) ---")
+    s = play_game(strategy_alphabeta, strategy_random, debug=True)
+    print("Résultat :", s)
+
+    print("\n--- random vs random ---")
+    s = play_game(strategy_random, strategy_random, debug=True)
+    print("Résultat :", s)
+
+    print("\n--- first_legal vs random ---")
+    s = play_game(strategy_first_legal, strategy_random, debug=False)
+    print("Résultat :", s)
+
+    
+
 if __name__ == "__main__":
     main()

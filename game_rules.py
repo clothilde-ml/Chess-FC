@@ -225,17 +225,40 @@ def is_goal(ball: Pos, player: Player) -> bool:
         return col in WHITE_GOAL_COLS
     return col in BLACK_GOAL_COLS
 
+
+def _has_no_pieces(state: GameState, player: Player) -> bool:
+    for row in range(BOARD_ROWS):
+        for col in range(BOARD_COLS):
+            pos = (row, col)
+            if not is_valid_pos(pos):
+                continue
+            piece = grid_get(state.grid, pos)
+            if piece is not None and piece.player == player:
+                return False
+    return True
+
+
+def white_wins(state: GameState) -> bool:
+    """True si WHITE a gagné : balle dans le but blanc ou BLACK n'a plus aucune pièce."""
+    return is_goal(state.ball, Player.WHITE) or _has_no_pieces(state, Player.BLACK)
+
+
+def black_wins(state: GameState) -> bool:
+    """True si BLACK a gagné : balle dans le but noir ou WHITE n'a plus aucune pièce."""
+    return is_goal(state.ball, Player.BLACK) or _has_no_pieces(state, Player.WHITE)
+
+
 def is_final(state: GameState) -> bool:
     return (
-        is_goal(state.ball, Player.WHITE)
-        or is_goal(state.ball, Player.BLACK)
+        white_wins(state)
+        or black_wins(state)
         or len(legals(state)) == 0
     )
 
 def score(state: GameState) -> float:
-    """+1 si WHITE a marqué, -1 si BLACK a marqué, 0 si match nul."""
-    if is_goal(state.ball, Player.WHITE):
+    """+1 si WHITE a gagné, -1 si BLACK a gagné, 0 si match nul."""
+    if white_wins(state):
         return 1.0
-    if is_goal(state.ball, Player.BLACK):
+    if black_wins(state):
         return -1.0
     return 0.0
